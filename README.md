@@ -10,4 +10,5 @@
 
     python app.py
 
-## You can view the website on [http://localhost:5000/](http://localhost:5000/)
+    
+Then visit http://localhost:5000
