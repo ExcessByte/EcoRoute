@@ -1,0 +1,72 @@
+[
+	{
+		"bin_id": "B1",
+		"name": "North Junction",
+		"lat": 10.380269,
+		"lon": 76.305474,
+		"current_fill": 82
+	},
+	{
+		"bin_id": "B2",
+		"name": "West Lane A",
+		"lat": 10.379533,
+		"lon": 76.303086,
+		"current_fill": 45
+	},
+	{
+		"bin_id": "B3",
+		"name": "Market Road Entrance",
+		"lat": 10.375817,
+		"lon": 76.306109,
+		"current_fill": 91
+	},
+	{
+		"bin_id": "B4",
+		"name": "West Lane B",
+		"lat": 10.373242,
+		"lon": 76.303086,
+		"current_fill": 77
+	},
+	{
+		"bin_id": "B5",
+		"name": "South West Sector",
+		"lat": 10.369605,
+		"lon": 76.304489,
+		"current_fill": 65
+	},
+	{
+		"bin_id": "B6",
+		"name": "Central Square",
+		"lat": 10.372065,
+		"lon": 76.30699,
+		"current_fill": 88
+	},
+	{
+		"bin_id": "B7",
+		"name": "East Market Rd",
+		"lat": 10.374387,
+		"lon": 76.309007,
+		"current_fill": 52
+	},
+	{
+		"bin_id": "B8",
+		"name": "Far East Sector",
+		"lat": 10.372951,
+		"lon": 76.316003,
+		"current_fill": 30
+	},
+	{
+		"bin_id": "B9",
+		"name": "South East Sector",
+		"lat": 10.37025,
+		"lon": 76.311797,
+		"current_fill": 95
+	},
+	{
+		"bin_id": "B10",
+		"name": "North East Lane",
+		"lat": 10.377004,
+		"lon": 76.309651,
+		"current_fill": 40
+	}
+]

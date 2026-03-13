@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+	<head>
+		<title>EcoRoute Kodakara</title>
+		<link
+			rel="stylesheet"
+			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='style.css') }}"
+		/>
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/leaflet-polyline-decorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+	</head>
+	<body>
+		<div id="header"><h1>Eco Route</h1></div>
+		<div id="main">
+			<div id="map"></div>
+			<div id="controls">
+				<button class="btn" onclick="optimizeRoute()">Generate Path</button>
+				<div id="route-summary"></div>
+				<h3>Collection Order</h3>
+				<div id="manifest-list">
+					<p>Click Generate..</p>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const map = L.map("map").setView([10.37464, 76.307205], 15);
+			L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+				map,
+			);
+
+			let binMarkers = [],
+				routeLayer = null,
+				arrowLayer = null,
+				stopLabels = [];
+
+			async function init() {
+				try {
+					const configRes = await fetch("/api/config");
+					const config = await configRes.json();
+
+					L.marker([config.depot.lat, config.depot.lon], {
+						icon: L.divIcon({
+							html: '<span style="font-size: 24px;">🏢</span>',
+							className: "",
+							iconAnchor: [12, 12],
+						}),
+					})
+						.addTo(map)
+						.bindPopup("<b>Main Center</b>");
+
+					loadBins();
+				} catch (e) {
+					console.error("Init failed", e);
+				}
+			}
+
+			async function loadBins() {
+				const res = await fetch("/api/bins");
+				const bins = await res.json();
+				binMarkers.forEach((m) => map.removeLayer(m));
+				binMarkers = [];
+
+				bins.forEach((bin) => {
+					if (!(bin.lat === 10.37464 && bin.lon === 76.307205)) {
+						const color =
+							bin.current_fill > 80
+								? "#ef4444"
+								: bin.current_fill > 50
+									? "#f59e0b"
+									: "#10b981";
+						const m = L.circleMarker([bin.lat, bin.lon], {
+							color: color,
+							fillColor: color,
+							fillOpacity: 0.5,
+							radius: 8,
+							weight: 2,
+						})
+							.addTo(map)
+							.bindPopup(`<b>${bin.name}</b><br>Fill: ${bin.current_fill}%`);
+						binMarkers.push(m);
+					}
+				});
+			}
+
+			async function optimizeRoute() {
+				const manifestDiv = document.getElementById("manifest-list");
+				manifestDiv.innerHTML =
+					"<p style='text-align:center;'>Calculating...</p>";
+
+				try {
+					const res = await fetch("/api/optimize", { method: "POST" });
+					const data = await res.json();
+
+					if (data.routes && data.routes.length > 0) {
+						const route = data.routes[0];
+
+						if (routeLayer) map.removeLayer(routeLayer);
+						if (arrowLayer) map.removeLayer(arrowLayer);
+						stopLabels.forEach((l) => map.removeLayer(l));
+						stopLabels = [];
+
+						routeLayer = L.polyline(route.path_coordinates, {
+							color: "#2563eb",
+							weight: 5,
+							opacity: 0.5,
+						}).addTo(map);
+
+						if (window.L && L.Symbol && L.Symbol.arrowHead) {
+							arrowLayer = L.polylineDecorator(routeLayer, {
+								patterns: [
+									{
+										offset: "5%",
+										repeat: "10%",
+										symbol: L.Symbol.arrowHead({
+											pixelSize: 12,
+											pathOptions: {
+												color: "#1e40af",
+												fillOpacity: 1,
+												weight: 0,
+											},
+										}),
+									},
+								],
+							}).addTo(map);
+						}
+
+						let listHtml = "";
+						route.bins.forEach((bin, i) => {
+							const label = L.marker([bin.lat, bin.lon], {
+								icon: L.divIcon({
+									html: `<div style="background:#1e40af; color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; border:2px solid white; font-weight:bold;">${i + 1}</div>`,
+									className: "",
+									iconAnchor: [11, 11],
+								}),
+							}).addTo(map);
+							stopLabels.push(label);
+
+							listHtml += `
+                    <div class="manifest-item">
+                        <span class="step-num">${i + 1}</span>
+                        <div>
+                            <strong>${bin.name}</strong><br>
+                            <small>${bin.current_fill}% Full</small>
+                        </div>
+                    </div>`;
+						});
+
+						manifestDiv.innerHTML = listHtml;
+						document.getElementById("route-summary").inlineHTML = `
+                <div class="info-card">
+                    <strong>✅ Route Optimized</strong><br>
+                    <span>Total Distance: ${route.distance_km} km</span>
+                </div>
+            `;
+
+						map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+					} else {
+						manifestDiv.innerHTML =
+							"<p style='text-align:center;'>No bins need collection.</p>";
+					}
+				} catch (err) {
+					console.error("Optimization error:", err);
+					manifestDiv.innerHTML =
+						"<p style='color:red;'>Error connecting to server.</p>";
+				}
+			}
+
+			init();
+		</script>
+	</body>
+</html>
